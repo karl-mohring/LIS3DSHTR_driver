@@ -1,0 +1,10 @@
+Language:
+Cpp
+BasedOnStyle: Google
+
+ColumnLimit: 200
+
+IndentWidth: 4
+
+MaxEmptyLinesToKeep: 1
+

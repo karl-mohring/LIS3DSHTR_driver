@@ -8,7 +8,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const uint8_t DEFAULT_I2C_ADDRESS = 0x1E;
+const uint8_t LIS3DSHTR_DEFAULT_I2C_ADDRESS = 0x1E;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -216,7 +216,7 @@ typedef union {
         bool z_axis_enabled : 1;
         bool block_data_update_enabled : 1;
         lis3dshtr_odr_t output_data_rate : 4;
-    }
+    };
 } lis3dshtr_power_config_t;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -338,7 +338,7 @@ typedef struct {
     float pitch;  // Pitch in radians wrt. gravity
 } lis3dshtr_roll_pitch_data_t;
 
-typedef lis3dshtr_raw_data_t data[LIS3DSHTR_FIFO_SIZE] lis3dshtr_fifo_data_t;
+typedef lis3dshtr_raw_data_t lis3dshtr_fifo_data_t[LIS3DSHTR_FIFO_SIZE];
 
 ////////////////////////////////////////////////////////////////////////////////
 // FIFO_CTRL
@@ -510,7 +510,7 @@ typedef uint8_t lis3dshtr_decimation_counter_t;
 class LIS3DSHTR {
    public:
     // Config
-    bool begin(uint8_t comm_mode = I2C_MODE, uint8_t address_or_cs = DEFAULT_I2C_ADDRESS);
+    bool begin(uint8_t comm_mode = LIS3DSHTR_I2C_MODE, uint8_t address_or_cs = LIS3DSHTR_DEFAULT_I2C_ADDRESS);
     bool comms_working();
 
     bool write(lis3dshtr_offset_t input, lis3dshtr_axis_selection_t axis);
@@ -526,12 +526,13 @@ class LIS3DSHTR {
     bool write(lis3dshtr_state_machine_code_register_t *input, lis3dshtr_state_machine_selection_t sm_number);
     bool write(lis3dshtr_state_machine_code_register_t input, lis3dshtr_state_machine_selection_t sm_number, uint8_t position);
     bool write(lis3dshtr_short_counter_t input, lis3dshtr_state_machine_selection_t sm_number);
+    bool write(lis3dshtr_short_counter_t input, lis3dshtr_short_counter_selection_t counter_index, lis3dshtr_state_machine_selection_t sm_number);
     bool write(lis3dshtr_long_counter_t input, lis3dshtr_long_counter_selection_t counter_index);
     bool write(lis3dshtr_long_counter_t input, lis3dshtr_long_counter_selection_t counter_index, lis3dshtr_state_machine_selection_t sm_number);
     bool write(lis3dshtr_thrs3_t input);
     bool write(lis3dshtr_threshold_t input, lis3dshtr_threshold_selection_t threshold_index);
     bool write(lis3dshtr_threshold_t input, lis3dshtr_threshold_selection_t threshold_index, lis3dshtr_state_machine_selection_t sm_number);
-    bool write(lis3dshtr_mask_t input, lis3dshtr_mask_selection_t mask_index, lis3dshtr_state_machine_selection_t sm_number););
+    bool write(lis3dshtr_mask_t input, lis3dshtr_mask_selection_t mask_index, lis3dshtr_state_machine_selection_t sm_number);
     bool write(lis3dshtr_state_machine_setting_t input, lis3dshtr_state_machine_selection_t sm_number);
 
     bool read(lis3dshtr_raw_temp_t &output);
@@ -540,10 +541,10 @@ class LIS3DSHTR {
     bool read(lis3dshtr_who_am_i_t &output);
     bool read(lis3dshtr_offset_t &output, lis3dshtr_axis_selection_t axis);
     bool read(lis3dshtr_constant_shift_t &output, lis3dshtr_axis_selection_t axis);
-    bool read(lis3dshtr_long_counter_t &output);
+    bool read(lis3dshtr_lc_t &output);
     bool read(lis3dshtr_stat_t &output);
     bool read(lis3dshtr_peak_t &output, lis3dshtr_state_machine_selection_t sm_number);
-    bool read(lis3dshtr_vector_filter_coeff_t &output, is3dshtr_vector_filter_coefficient_selection_t coefficient_index);
+    bool read(lis3dshtr_vector_filter_coeff_t &output, lis3dshtr_vector_filter_coefficient_selection_t coefficient_index);
     bool read(lis3dshtr_power_config_t &output);
     bool read(lis3dshtr_state_machine_config_t &output, lis3dshtr_state_machine_selection_t sm_number);
     bool read(lis3dshtr_interrupt_config_t &output);
@@ -552,16 +553,18 @@ class LIS3DSHTR {
     bool read(lis3dshtr_status_t &output);
     bool read(lis3dshtr_raw_data_t &output);
     bool read(lis3dshtr_roll_pitch_data_t &output);
-    uin8_t read(lis3dshtr_fifo_data_t &output);
+    uint8_t read(lis3dshtr_fifo_data_t &output);
     bool read(lis3dshtr_fifo_control_t &output);
     bool read(lis3dshtr_state_machine_code_register_t *output, lis3dshtr_state_machine_selection_t sm_number);
-    bool read(lis3dshtr_state_machine_code_register_t *output, lis3dshtr_state_machine_selection_t sm_number, uint8_t position);
+    bool read(lis3dshtr_op_code_t &output, lis3dshtr_state_machine_selection_t sm_number, uint8_t position);
     bool read(lis3dshtr_fifo_status_t &output);
     bool read(lis3dshtr_short_counter_t &output, lis3dshtr_state_machine_selection_t sm_number);
+    bool read(lis3dshtr_short_counter_t &output, lis3dshtr_short_counter_selection_t counter_index, lis3dshtr_state_machine_selection_t sm_number);
     bool read(lis3dshtr_long_counter_t &output, lis3dshtr_long_counter_selection_t counter_index);
     bool read(lis3dshtr_long_counter_t &output, lis3dshtr_long_counter_selection_t counter_index, lis3dshtr_state_machine_selection_t sm_number);
-    bool read(lis3dshtr_threshold_t &output);
     bool read(lis3dshtr_thrs3_t &output);
+    bool read(lis3dshtr_threshold_t &output, lis3dshtr_threshold_selection_t threshold_index);
+    bool read(lis3dshtr_threshold_t &output, lis3dshtr_threshold_selection_t threshold_index, lis3dshtr_state_machine_selection_t sm_number);
     bool read(lis3dshtr_mask_t &output, lis3dshtr_mask_selection_t mask_index, lis3dshtr_state_machine_selection_t sm_number);
     bool read(lis3dshtr_state_machine_setting_t &output, lis3dshtr_state_machine_selection_t sm_number);
     bool read(lis3dshtr_state_machine_pointers_t &output, lis3dshtr_state_machine_selection_t sm_number);
@@ -642,7 +645,7 @@ class LIS3DSHTR {
     bool read_spi(uint8_t *input, lis3dshtr_register_t address, uint8_t length = 1);
 
     // Communication stuff
-    uint8_t comm_type;
+    uint8_t comms_type;
     uint8_t i2c_address_or_cs_pin;
 
     ///////////////////////////////////////////////////////////////////////////////

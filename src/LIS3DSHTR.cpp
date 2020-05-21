@@ -14,8 +14,8 @@
  * @param address_or_cs The address of the accelerometer if using I²C mode, or the controller's CS pin if using SPI.
  * @return True if communication could be started and the device ID was read successfully.
  */
-bool LIS3DSHTR::begin(uint8_t comm_mode = I2C_MODE, uint8_t address_or_cs = DEFAULT_I2C_ADDRESS) {
-    this->comm_type = comm_mode;
+bool LIS3DSHTR::begin(uint8_t comm_mode, uint8_t address_or_cs) {
+    this->comms_type = comm_mode;
     this->i2c_address_or_cs_pin = address_or_cs;
     return comms_working();
 }
@@ -161,7 +161,7 @@ bool LIS3DSHTR::read_spi(uint8_t *output, lis3dshtr_register_t address, uint8_t 
 
     // Proceed if a valid pin has been selected
     if (this->i2c_address_or_cs_pin > 0) {
-        digitalWrite(cs_pin, LOW);
+        digitalWrite(this->i2c_address_or_cs_pin, LOW);
         SPI.transfer(this->i2c_address_or_cs_pin | 0x80 | 0x40);
         for (size_t i = 0; i < length; i++) {
             uint8_t c = SPI.transfer(0x00);
@@ -193,11 +193,11 @@ bool LIS3DSHTR::read_spi(uint8_t *output, lis3dshtr_register_t address, uint8_t 
 bool LIS3DSHTR::write(lis3dshtr_offset_t input, lis3dshtr_axis_selection_t axis) {
     bool success = false;
     if (axis == LIS3DSHTR_X_AXIS)
-        success = write(&input, OFF_X);
+        success = write((uint8_t *)&input, OFF_X);
     else if (axis == LIS3DSHTR_Y_AXIS)
-        success = write(&input, OFF_Y);
+        success = write((uint8_t *)&input, OFF_Y);
     else if (axis == LIS3DSHTR_Z_AXIS)
-        success = write(&input, OFF_Z);
+        success = write((uint8_t *)&input, OFF_Z);
     return success;
 }
 
@@ -216,11 +216,11 @@ bool LIS3DSHTR::write(lis3dshtr_offset_t input, lis3dshtr_axis_selection_t axis)
 bool LIS3DSHTR::write(lis3dshtr_constant_shift_t input, lis3dshtr_axis_selection_t axis) {
     bool success = false;
     if (axis == LIS3DSHTR_X_AXIS)
-        success = write(&input, CS_X);
+        success = write((uint8_t *)&input, CS_X);
     else if (axis == LIS3DSHTR_Y_AXIS)
-        success = write(&input, CS_Y);
+        success = write((uint8_t *)&input, CS_Y);
     else if (axis == LIS3DSHTR_Z_AXIS)
-        success = write(&input, CS_Z);
+        success = write((uint8_t *)&input, CS_Z);
     return success;
 }
 
@@ -232,7 +232,7 @@ bool LIS3DSHTR::write(lis3dshtr_constant_shift_t input, lis3dshtr_axis_selection
  * @param input Long counter value to be written.
  * @return True if the write was successful.
  */
-bool LIS3DSHTR::write(lis3dshtr_lc_t input) { return write(&input, LC_L, 2); }
+bool LIS3DSHTR::write(lis3dshtr_lc_t input) { return write((uint8_t *)&input, LC_L, 2); }
 
 /**
  * Write a coefficient for the vector filter (VFC_n).
@@ -251,13 +251,13 @@ bool LIS3DSHTR::write(lis3dshtr_lc_t input) { return write(&input, LC_L, 2); }
 bool LIS3DSHTR::write(lis3dshtr_vector_filter_coeff_t input, lis3dshtr_vector_filter_coefficient_selection_t coefficient_index) {
     bool success = false;
     if (coefficient_index == LIS3DSHTR_VFC_1)
-        success = write(&input, VFC_1);
+        success = write((uint8_t *)&input, VFC_1);
     else if (coefficient_index == LIS3DSHTR_VFC_2)
-        success = write(&input, VFC_2);
+        success = write((uint8_t *)&input, VFC_2);
     else if (coefficient_index == LIS3DSHTR_VFC_3)
-        success = write(&input, VFC_3);
+        success = write((uint8_t *)&input, VFC_3);
     else if (coefficient_index == LIS3DSHTR_VFC_4)
-        success = write(&input, VFC_4);
+        success = write((uint8_t *)&input, VFC_4);
 
     return success;
 }
@@ -268,7 +268,7 @@ bool LIS3DSHTR::write(lis3dshtr_vector_filter_coeff_t input, lis3dshtr_vector_fi
  * @param input Configuration to be written to the device.
  * @return True if the write was successful.
  */
-bool LIS3DSHTR::write(lis3dshtr_power_config_t input) { return write(&input, CTRL_REG4); }
+bool LIS3DSHTR::write(lis3dshtr_power_config_t input) { return write((uint8_t *)&input, CTRL_REG4); }
 
 /**
  * Write a configuration to one of the device's state machines (CTRL_REG1, CTRL_REG2).
@@ -280,9 +280,9 @@ bool LIS3DSHTR::write(lis3dshtr_power_config_t input) { return write(&input, CTR
 bool LIS3DSHTR::write(lis3dshtr_state_machine_config_t input, lis3dshtr_state_machine_selection_t sm_number) {
     bool success = false;
     if (sm_number == LIS3DSHTR_STATE_MACHINE_1)
-        success = write(&input, CTRL_REG1);
+        success = write((uint8_t *)&input, CTRL_REG1);
     else if (sm_number == LIS3DSHTR_STATE_MACHINE_2)
-        success = write(&input, CTRL_REG2);
+        success = write((uint8_t *)&input, CTRL_REG2);
 
     return success;
 }
@@ -293,7 +293,7 @@ bool LIS3DSHTR::write(lis3dshtr_state_machine_config_t input, lis3dshtr_state_ma
  * @param input Configuration to be written.
  * @return True if the write was successful.
  */
-bool LIS3DSHTR::write(lis3dshtr_interrupt_config_t input) { return write(&input, CTRL_REG3); }
+bool LIS3DSHTR::write(lis3dshtr_interrupt_config_t input) { return write((uint8_t *)&input, CTRL_REG3); }
 
 /**
  * Write a configuration to the scale configuration register (CTRL_REG5)
@@ -301,7 +301,7 @@ bool LIS3DSHTR::write(lis3dshtr_interrupt_config_t input) { return write(&input,
  * @param input Configuration to be written.
  * @return True if the write was successful.
  */
-bool LIS3DSHTR::write(lis3dshtr_scale_config_t input) { return write(&input, CTRL_REG5); }
+bool LIS3DSHTR::write(lis3dshtr_scale_config_t input) { return write((uint8_t *)&input, CTRL_REG5); }
 
 /**
  * Write to the FIFO configuration register (CTRL_REG6)
@@ -309,7 +309,7 @@ bool LIS3DSHTR::write(lis3dshtr_scale_config_t input) { return write(&input, CTR
  * @param input Configuration to be written.
  * @return True if the write was successful.
  */
-bool LIS3DSHTR::write(lis3dshtr_fifo_config_t input) { return write(&input, CTRL_REG6); }
+bool LIS3DSHTR::write(lis3dshtr_fifo_config_t input) { return write((uint8_t *)&input, CTRL_REG6); }
 
 /**
  * Write a configuration to FIFO control register (FIFO_CTRL)
@@ -317,7 +317,7 @@ bool LIS3DSHTR::write(lis3dshtr_fifo_config_t input) { return write(&input, CTRL
  * @param input Configuration to be written.
  * @return True if the write was successful.
  */
-bool LIS3DSHTR::write(lis3dshtr_fifo_control_t input) { return write(&input, FIFO_CTRL); }
+bool LIS3DSHTR::write(lis3dshtr_fifo_control_t input) { return write((uint8_t *)&input, FIFO_CTRL); }
 
 /**
  * Write an instruction set to the state machine code registers (STm_n).
@@ -332,9 +332,9 @@ bool LIS3DSHTR::write(lis3dshtr_fifo_control_t input) { return write(&input, FIF
 bool LIS3DSHTR::write(lis3dshtr_state_machine_code_register_t *input, lis3dshtr_state_machine_selection_t sm_number) {
     bool success = false;
     if (sm_number == LIS3DSHTR_STATE_MACHINE_1)
-        success = write(input, ST1_1, LIS3DSHTR_OP_CODE_REGISTER_SIZE);
+        success = write((uint8_t *)input, ST1_1, LIS3DSHTR_OP_CODE_REGISTER_SIZE);
     else if (sm_number == LIS3DSHTR_STATE_MACHINE_2)
-        success = write(input, ST2_1, LIS3DSHTR_OP_CODE_REGISTER_SIZE);
+        success = write((uint8_t *)input, ST2_1, LIS3DSHTR_OP_CODE_REGISTER_SIZE);
     return success;
 }
 
@@ -350,9 +350,9 @@ bool LIS3DSHTR::write(lis3dshtr_state_machine_code_register_t input, lis3dshtr_s
     bool success = false;
     if (position < LIS3DSHTR_OP_CODE_REGISTER_SIZE) {
         if (sm_number == LIS3DSHTR_STATE_MACHINE_1)
-            success = write(input, ST1_1 + position);
+            success = write((uint8_t *)&input, lis3dshtr_register_t(ST1_1 + position));
         else if (sm_number == LIS3DSHTR_STATE_MACHINE_2)
-            success = write(input, ST2_1 + position);
+            success = write((uint8_t *)&input, lis3dshtr_register_t(ST2_1 + position));
     }
     return success;
 }
@@ -380,7 +380,7 @@ bool LIS3DSHTR::write(lis3dshtr_short_counter_t input, lis3dshtr_short_counter_s
         if (sm_number == LIS3DSHTR_STATE_MACHINE_2) {
             address += (TIM4_2 - TIM4_1);
         }
-        success = write(&input, (lis3dshtr_register_t)address);
+        success = write((uint8_t *)&input, (lis3dshtr_register_t)address);
     }
 
     return success;
@@ -429,7 +429,7 @@ bool LIS3DSHTR::write(lis3dshtr_long_counter_t input, lis3dshtr_long_counter_sel
             if (sm_number == LIS3DSHTR_STATE_MACHINE_2) {
                 address += (TC2 - TC1);
             }
-            success = write(&input, address, 2);
+            success = write((uint8_t *)&input, (lis3dshtr_register_t)address, 2);
         }
     }
 
@@ -442,7 +442,7 @@ bool LIS3DSHTR::write(lis3dshtr_long_counter_t input, lis3dshtr_long_counter_sel
  * @param input Value to be written to THRS3.
  * @return True if the write was successful.
  */
-bool LIS3DSHTR::write(lis3dshtr_thrs3_t input) { return write(&input, THRS3); }
+bool LIS3DSHTR::write(lis3dshtr_thrs3_t input) { return write((uint8_t *)&input, THRS3); }
 
 /**
  * Write a value to a threshold.
@@ -482,7 +482,7 @@ bool LIS3DSHTR::write(lis3dshtr_threshold_t input, lis3dshtr_threshold_selection
             if (sm_number == LIS3DSHTR_STATE_MACHINE_2) {
                 address += (THRS1_2 - THRS1_1);
             }
-            success = write(&input, address);
+            success = write((uint8_t *)&input, (lis3dshtr_register_t)address);
         }
     }
     return success;
@@ -508,7 +508,7 @@ bool LIS3DSHTR::write(lis3dshtr_mask_t input, lis3dshtr_mask_selection_t mask_in
         if (sm_number == LIS3DSHTR_STATE_MACHINE_2) {
             address += MASK2_A - MASK1_A;
         }
-        success = write(&input, address);
+        success = write((uint8_t *)&input, (lis3dshtr_register_t)address);
     }
 }
 
@@ -526,9 +526,9 @@ bool LIS3DSHTR::write(lis3dshtr_mask_t input, lis3dshtr_mask_selection_t mask_in
 bool LIS3DSHTR::write(lis3dshtr_state_machine_setting_t input, lis3dshtr_state_machine_selection_t sm_number) {
     bool success = false;
     if (sm_number == LIS3DSHTR_STATE_MACHINE_1)
-        success = write(&input, SETT1);
+        success = write((uint8_t *)&input, SETT1);
     else if (sm_number == LIS3DSHTR_STATE_MACHINE_2)
-        success = write(&input, SETT2);
+        success = write((uint8_t *)&input, SETT2);
     return success;
 }
 
@@ -556,8 +556,9 @@ bool LIS3DSHTR::read(lis3dshtr_raw_temp_t &output) { return read((uint8_t *)&out
  * @return True if read was successful.
  */
 bool LIS3DSHTR::read(lis3dshtr_temp_t &output) {
-    bool success = read((lis3dshtr_raw_data_t)output);
-    output += LIS3DSHTR_TEMPERATURE_OFFSET;
+    lis3dshtr_raw_temp_t raw;
+    bool success = read(raw);
+    output = raw + LIS3DSHTR_TEMPERATURE_OFFSET;
     return success;
 }
 
@@ -602,11 +603,11 @@ bool LIS3DSHTR::read(lis3dshtr_who_am_i_t &output) { return read((uint8_t *)&out
 bool LIS3DSHTR::read(lis3dshtr_offset_t &output, lis3dshtr_axis_selection_t axis) {
     bool success = false;
     if (axis == LIS3DSHTR_X_AXIS)
-        success = read((uint8_t *)&input, OFF_X);
+        success = read((uint8_t *)&output, OFF_X);
     else if (axis == LIS3DSHTR_Y_AXIS)
-        success = read((uint8_t *)&input, OFF_Y);
+        success = read((uint8_t *)&output, OFF_Y);
     else if (axis == LIS3DSHTR_Z_AXIS)
-        success = read((uint8_t *)&input, OFF_Z);
+        success = read((uint8_t *)&output, OFF_Z);
     return success;
 }
 
@@ -623,11 +624,11 @@ bool LIS3DSHTR::read(lis3dshtr_offset_t &output, lis3dshtr_axis_selection_t axis
 bool LIS3DSHTR::read(lis3dshtr_constant_shift_t &output, lis3dshtr_axis_selection_t axis) {
     bool success = false;
     if (axis == LIS3DSHTR_X_AXIS)
-        success = read((uint8_t *)&input, CS_X);
+        success = read((uint8_t *)&output, CS_X);
     else if (axis == LIS3DSHTR_Y_AXIS)
-        success = read((uint8_t *)&input, CS_Y);
+        success = read((uint8_t *)&output, CS_Y);
     else if (axis == LIS3DSHTR_Z_AXIS)
-        success = read((uint8_t *)&input, CS_Z);
+        success = read((uint8_t *)&output, CS_Z);
     return success;
 }
 
@@ -659,9 +660,9 @@ bool LIS3DSHTR::read(lis3dshtr_stat_t &output) { return read((uint8_t *)&output,
 bool LIS3DSHTR::read(lis3dshtr_peak_t &output, lis3dshtr_state_machine_selection_t sm_number) {
     bool success = false;
     if (sm_number == LIS3DSHTR_STATE_MACHINE_1)
-        success = return read((uint8_t *)&output, PEAK1);
+        success = read((uint8_t *)&output, PEAK1);
     else if (sm_number == LIS3DSHTR_STATE_MACHINE_2)
-        success = return read((uint8_t *)&output, PEAK2);
+        success = read((uint8_t *)&output, PEAK2);
     return success;
 }
 
@@ -679,7 +680,7 @@ bool LIS3DSHTR::read(lis3dshtr_peak_t &output, lis3dshtr_state_machine_selection
  * @param coefficient_index Index of the coefficient to be read (LIS3DSHTR_VFC_[1-4] or LIS3DSHTR_VECTOR_COEFF_[0-3]).
  * @return True if read was successful.
  */
-bool LIS3DSHTR::read(lis3dshtr_vector_filter_coeff_t &output, is3dshtr_vector_filter_coefficient_selection_t coefficient_index) {
+bool LIS3DSHTR::read(lis3dshtr_vector_filter_coeff_t &output, lis3dshtr_vector_filter_coefficient_selection_t coefficient_index) {
     bool success = false;
     if (coefficient_index == LIS3DSHTR_VFC_1)
         success = read((uint8_t *)&output, VFC_1);
@@ -839,9 +840,9 @@ bool LIS3DSHTR::read(lis3dshtr_fifo_control_t &output) { return read((uint8_t *)
 bool LIS3DSHTR::read(lis3dshtr_state_machine_code_register_t *output, lis3dshtr_state_machine_selection_t sm_number) {
     bool success = false;
     if (sm_number == LIS3DSHTR_STATE_MACHINE_1)
-        success = read((uint8_t)output, ST1_1, LIS3DSHTR_OP_CODE_REGISTER_SIZE);
+        success = read((uint8_t *)output, ST1_1, LIS3DSHTR_OP_CODE_REGISTER_SIZE);
     else if (sm_number == LIS3DSHTR_STATE_MACHINE_2)
-        success = read((uint8_t)output, ST2_1, LIS3DSHTR_OP_CODE_REGISTER_SIZE);
+        success = read((uint8_t *)output, ST2_1, LIS3DSHTR_OP_CODE_REGISTER_SIZE);
     return success;
 }
 
@@ -853,13 +854,13 @@ bool LIS3DSHTR::read(lis3dshtr_state_machine_code_register_t *output, lis3dshtr_
  * @param position Position in the code register from which the op code will be read (0-15).
  * @return True if read was successful.
  */
-bool LIS3DSHTR::read(lis3dshtr_state_machine_code_register_t &output, lis3dshtr_state_machine_selection_t sm_number, uint8_t position) {
+bool LIS3DSHTR::read(lis3dshtr_op_code_t &output, lis3dshtr_state_machine_selection_t sm_number, uint8_t position) {
     bool success = false;
     if (position < LIS3DSHTR_OP_CODE_REGISTER_SIZE) {
         if (sm_number == LIS3DSHTR_STATE_MACHINE_1)
-            success = read((uint8_t *)&output, ST1_1 + position);
+            success = read((uint8_t *)&output, lis3dshtr_register_t(ST1_1 + position));
         else if (sm_number == LIS3DSHTR_STATE_MACHINE_2)
-            success = read((uint8_t *)&output, ST2_1 + position);
+            success = read((uint8_t *)&output, lis3dshtr_register_t(ST2_1 + position));
     }
     return success;
 }
@@ -910,7 +911,11 @@ bool LIS3DSHTR::read(lis3dshtr_short_counter_t &output, lis3dshtr_short_counter_
  */
 bool LIS3DSHTR::read(lis3dshtr_long_counter_t &output, lis3dshtr_long_counter_selection_t counter_index) {
     bool success = false;
-    if (counter_index == LIS3DSHTR_LC) success = read((lis3dshtr_lc_t)output);
+    if (counter_index == LIS3DSHTR_LC) {
+        lis3dshtr_lc_t lc;
+        success = read(lc);
+        output = lc;
+    }
     return success;
 }
 
@@ -924,8 +929,11 @@ bool LIS3DSHTR::read(lis3dshtr_long_counter_t &output, lis3dshtr_long_counter_se
     bool success = false;
     uint8_t address = 0;
 
-    if (counter_index == LIS3DSHTR_LC)
-        success = read((lis3dshtr_lc_t)output);
+    if (counter_index == LIS3DSHTR_LC) {
+        lis3dshtr_lc_t lc;
+        success = read(lc);
+        output = lc;
+    }
 
     else {
         if (counter_index == LIS3DSHTR_TC)
@@ -939,7 +947,7 @@ bool LIS3DSHTR::read(lis3dshtr_long_counter_t &output, lis3dshtr_long_counter_se
             if (sm_number == LIS3DSHTR_STATE_MACHINE_2) {
                 address += (TC2 - TC1);
             }
-            success = read((uint8_t *)&output, address, 2);
+            success = read((uint8_t *)&output, (lis3dshtr_register_t)address, 2);
         }
     }
 
@@ -966,7 +974,12 @@ bool LIS3DSHTR::read(lis3dshtr_thrs3_t &output) { return read((uint8_t *)&output
  */
 bool LIS3DSHTR::read(lis3dshtr_threshold_t &output, lis3dshtr_threshold_selection_t threshold_index) {
     bool success = false;
-    if (threshold_index == LIS3DSHTR_THRS3) success = read((lis3dshtr_thrs3_t)input);
+    if (threshold_index == LIS3DSHTR_THRS3) {
+        lis3dshtr_thrs3_t thres;
+        success = read(thres);
+        output = thres;
+    }
+    success = read(output);
     return success;
 }
 
@@ -982,9 +995,11 @@ bool LIS3DSHTR::read(lis3dshtr_threshold_t &output, lis3dshtr_threshold_selectio
     bool success = false;
     uint8_t address = 0;
 
-    if (threshold_index == LIS3DSHTR_THRS3)
-        success = read((lis3dshtr_thrs3_t)input);
-    else {
+    if (threshold_index == LIS3DSHTR_THRS3) {
+        lis3dshtr_thrs3_t thres;
+        success = read(thres);
+        output = thres;
+    } else {
         if (threshold_index == LIS3DSHTR_THRS1) address = THRS1_1;
         if (threshold_index == LIS3DSHTR_THRS2) address = THRS2_1;
 

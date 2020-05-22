@@ -29,10 +29,10 @@ bool LIS3DSHTR::begin(uint8_t comm_mode, uint8_t address_or_cs) {
  * @return True if the read ID matches the expected value.
  */
 bool LIS3DSHTR::comms_working() {
-    lis3dshtr_who_am_i_t id;
-    read(id);
+    lis3dshtr_who_am_i_t device;
+    read(device);
 
-    return id == LIS3DSHTR_WHO_AM_I_ID;
+    return device.id == LIS3DSHTR_WHO_AM_I_ID;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -50,7 +50,7 @@ bool LIS3DSHTR::comms_working() {
  * @return True if the write was successful.
  */
 bool LIS3DSHTR::write(uint8_t *input, lis3dshtr_register_t address, uint8_t length) {
-    bool success;
+    bool success = false;
     if (this->comms_type == LIS3DSHTR_I2C_MODE) success = write_i2c(input, address, length);
     if (this->comms_type == LIS3DSHTR_SPI_MODE) success = write_spi(input, address, length);
     return success;
@@ -98,8 +98,9 @@ bool LIS3DSHTR::write_spi(uint8_t *input, lis3dshtr_register_t address, uint8_t 
         }
         digitalWrite(this->i2c_address_or_cs_pin, HIGH);
         success = true;
-        return success;
     }
+
+    return success;
 }
 
 /**
@@ -114,7 +115,7 @@ bool LIS3DSHTR::write_spi(uint8_t *input, lis3dshtr_register_t address, uint8_t 
  * @return True if the read was successful.
  */
 bool LIS3DSHTR::read(uint8_t *output, lis3dshtr_register_t address, uint8_t length) {
-    bool success;
+    bool success = false;
     if (this->comms_type == LIS3DSHTR_I2C_MODE) success = read_i2c(output, address, length);
     if (this->comms_type == LIS3DSHTR_SPI_MODE) success = read_spi(output, address, length);
     return success;
@@ -456,7 +457,9 @@ bool LIS3DSHTR::write(lis3dshtr_thrs3_t input) { return write((uint8_t *)&input,
  */
 bool LIS3DSHTR::write(lis3dshtr_threshold_t input, lis3dshtr_threshold_selection_t threshold_index) {
     bool success = false;
-    if (threshold_index == LIS3DSHTR_THRS3) success = write((lis3dshtr_thrs3_t)input);
+    lis3dshtr_thrs3_t thresh;
+    thresh.raw = input;
+    if (threshold_index == LIS3DSHTR_THRS3) success = write(thresh);
     return success;
 }
 
@@ -473,7 +476,7 @@ bool LIS3DSHTR::write(lis3dshtr_threshold_t input, lis3dshtr_threshold_selection
     uint8_t address = 0;
 
     if (threshold_index == LIS3DSHTR_THRS3)
-        success = write((lis3dshtr_thrs3_t)input);
+        success = write(input, threshold_index);
     else {
         if (threshold_index == LIS3DSHTR_THRS1) address = THRS1_1;
         if (threshold_index == LIS3DSHTR_THRS2) address = THRS2_1;
@@ -499,6 +502,7 @@ bool LIS3DSHTR::write(lis3dshtr_threshold_t input, lis3dshtr_threshold_selection
 bool LIS3DSHTR::write(lis3dshtr_mask_t input, lis3dshtr_mask_selection_t mask_index, lis3dshtr_state_machine_selection_t sm_number) {
     bool success = false;
     uint8_t address = 0;
+
     if (mask_index == LIS3DSHTR_MASK_A)
         address = MASK1_A;
     else if (mask_index == LIS3DSHTR_MASK_B)
@@ -510,6 +514,8 @@ bool LIS3DSHTR::write(lis3dshtr_mask_t input, lis3dshtr_mask_selection_t mask_in
         }
         success = write((uint8_t *)&input, (lis3dshtr_register_t)address);
     }
+
+    return success;
 }
 
 /**
@@ -556,9 +562,9 @@ bool LIS3DSHTR::read(lis3dshtr_raw_temp_t &output) { return read((uint8_t *)&out
  * @return True if read was successful.
  */
 bool LIS3DSHTR::read(lis3dshtr_temp_t &output) {
-    lis3dshtr_raw_temp_t raw;
-    bool success = read(raw);
-    output = raw + LIS3DSHTR_TEMPERATURE_OFFSET;
+    lis3dshtr_raw_temp_t temp;
+    bool success = read(temp);
+    output = temp.raw + LIS3DSHTR_TEMPERATURE_OFFSET;
     return success;
 }
 
@@ -854,7 +860,7 @@ bool LIS3DSHTR::read(lis3dshtr_state_machine_code_register_t *output, lis3dshtr_
  * @param position Position in the code register from which the op code will be read (0-15).
  * @return True if read was successful.
  */
-bool LIS3DSHTR::read(lis3dshtr_op_code_t &output, lis3dshtr_state_machine_selection_t sm_number, uint8_t position) {
+bool LIS3DSHTR::read(lis3dshtr_op_code_t &output, uint8_t position, lis3dshtr_state_machine_selection_t sm_number) {
     bool success = false;
     if (position < LIS3DSHTR_OP_CODE_REGISTER_SIZE) {
         if (sm_number == LIS3DSHTR_STATE_MACHINE_1)
@@ -977,7 +983,7 @@ bool LIS3DSHTR::read(lis3dshtr_threshold_t &output, lis3dshtr_threshold_selectio
     if (threshold_index == LIS3DSHTR_THRS3) {
         lis3dshtr_thrs3_t thres;
         success = read(thres);
-        output = thres;
+        output = thres.raw;
     }
     success = read(output);
     return success;
@@ -996,9 +1002,7 @@ bool LIS3DSHTR::read(lis3dshtr_threshold_t &output, lis3dshtr_threshold_selectio
     uint8_t address = 0;
 
     if (threshold_index == LIS3DSHTR_THRS3) {
-        lis3dshtr_thrs3_t thres;
-        success = read(thres);
-        output = thres;
+        success = read(output, threshold_index);
     } else {
         if (threshold_index == LIS3DSHTR_THRS1) address = THRS1_1;
         if (threshold_index == LIS3DSHTR_THRS2) address = THRS2_1;
@@ -1024,6 +1028,7 @@ bool LIS3DSHTR::read(lis3dshtr_threshold_t &output, lis3dshtr_threshold_selectio
 bool LIS3DSHTR::read(lis3dshtr_mask_t &output, lis3dshtr_mask_selection_t mask_index, lis3dshtr_state_machine_selection_t sm_number) {
     bool success = false;
     uint8_t address = 0;
+
     if (mask_index == LIS3DSHTR_MASK_A)
         address = MASK1_A;
     else if (mask_index == LIS3DSHTR_MASK_B)
@@ -1035,6 +1040,8 @@ bool LIS3DSHTR::read(lis3dshtr_mask_t &output, lis3dshtr_mask_selection_t mask_i
         }
         success = read((uint8_t *)&output, (lis3dshtr_register_t)address);
     }
+
+    return success;
 }
 
 /**

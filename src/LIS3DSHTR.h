@@ -35,7 +35,9 @@ typedef enum LIS3DSHTR_AXES {
 
 const uint8_t LIS3DSHTR_TEMPERATURE_OFFSET = 25;
 
-typedef int8_t lis3dshtr_raw_temp_t;
+typedef struct {
+    int8_t raw;
+} lis3dshtr_raw_temp_t;
 typedef int8_t lis3dshtr_temp_t;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -54,7 +56,9 @@ typedef uint8_t lis3dshtr_info_t;
  * Who am I ID.
  */
 
-typedef uint8_t lis3dshtr_who_am_i_t;
+typedef struct {
+    uint8_t id;
+} lis3dshtr_who_am_i_t;
 const uint8_t LIS3DSHTR_WHO_AM_I_ID = 0b111111;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -75,7 +79,9 @@ const uint8_t LIS3DSHTR_WHO_AM_I_ID = 0b111111;
  * According to the previous formula, the offset on each axis can be compensated from -4095 to 4096 LSB, with steps of 32 LSB
  */
 
-typedef int8_t lis3dshtr_offset_t;
+typedef struct {
+    int8_t raw;
+} lis3dshtr_offset_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // CS_X, CS_Y, CS_Z
@@ -104,11 +110,6 @@ typedef int8_t lis3dshtr_constant_shift_t;
  * Reading the LC registers resets the LONG bit in the STAT register (18h) to the default value (0).
  */
 
-typedef union {
-    uint8_t bytes[2];
-    uint16_t raw;
-} lis3dshtr_long_counter_t;
-
 // TIM1_n, TIM2_n, TIM3_n, TIM4_n, THRS1_n, THRS2_n, THRS3, TCn
 
 typedef enum LIS3DSHTR_SHORT_COUNTERS { LIS3DSHTR_TIM4, LIS3DSHTR_TIM3 } lis3dshtr_short_counter_selection_t;
@@ -125,7 +126,9 @@ typedef uint8_t lis3dshtr_short_counter_t;  // 1 LSB = 1/ODR
 typedef uint16_t lis3dshtr_long_counter_t;  // 1 LSB = 1/ODR
 typedef uint16_t lis3dshtr_lc_t;
 typedef int8_t lis3dshtr_threshold_t;  // 1 LSB = FS/128
-typedef uint8_t lis3dshtr_thrs3_t;     // 1 LSB = FS/128
+typedef struct {
+    uint8_t raw;
+} lis3dshtr_thrs3_t;  // 1 LSB = FS/128
 
 /**
  * THRS3 is the common threshold for overrun detection.
@@ -424,9 +427,7 @@ typedef enum LIS3DSHTR_OP_CODES {
 } lis3dshtr_op_code_t;
 
 const uint8_t LIS3DSHTR_OP_CODE_REGISTER_SIZE = 16;
-typedef struct {
-    lis3dshtr_op_code_t op_codes[LIS3DSHTR_OP_CODE_REGISTER_SIZE];
-} lis3dshtr_state_machine_code_register_t;
+typedef lis3dshtr_op_code_t lis3dshtr_state_machine_code_register_t[LIS3DSHTR_OP_CODE_REGISTER_SIZE];
 
 ////////////////////////////////////////////////////////////////////////////////
 // MASKn_A, MASKn_B
@@ -556,7 +557,7 @@ class LIS3DSHTR {
     uint8_t read(lis3dshtr_fifo_data_t &output);
     bool read(lis3dshtr_fifo_control_t &output);
     bool read(lis3dshtr_state_machine_code_register_t *output, lis3dshtr_state_machine_selection_t sm_number);
-    bool read(lis3dshtr_op_code_t &output, lis3dshtr_state_machine_selection_t sm_number, uint8_t position);
+    bool read(lis3dshtr_op_code_t &output, uint8_t position, lis3dshtr_state_machine_selection_t sm_number);
     bool read(lis3dshtr_fifo_status_t &output);
     bool read(lis3dshtr_short_counter_t &output, lis3dshtr_state_machine_selection_t sm_number);
     bool read(lis3dshtr_short_counter_t &output, lis3dshtr_short_counter_selection_t counter_index, lis3dshtr_state_machine_selection_t sm_number);

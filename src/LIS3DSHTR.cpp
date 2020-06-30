@@ -131,6 +131,8 @@ bool LIS3DSHTR::read(uint8_t *output, lis3dshtr_register_t address, uint8_t leng
  */
 bool LIS3DSHTR::read_i2c(uint8_t *output, lis3dshtr_register_t address, uint8_t length) {
     bool success = false;
+    Wire.flush();
+    while (Wire.available()) Wire.read();
     Wire.beginTransmission(this->i2c_address_or_cs_pin);
     Wire.write(address);
     if (Wire.endTransmission() != 0)
